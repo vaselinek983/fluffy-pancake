@@ -57,14 +57,14 @@ jobs:
       uses: actions/cache@v4
       with:
         path: |
-          fluffy_pancake/bin
-          fluffy_pancake/lib
+          fluffy-pancake/bin
+          fluffy-pancake/lib
         key: >
           ${{ runner.os }}-vtm-umake-debug-
           ${{ hashFiles(
-            'fluffy_pancake/CMakeLists.txt',
-            'fluffy_pancake/source/**',
-            'fluffy_pancake/cfg/**'
+            'fluffy-pancake/CMakeLists.txt',
+            'fluffy-pancake/source/**',
+            'fluffy-pancake/cfg/**'
           ) }}
 
     # --------------------------------------------------
@@ -72,7 +72,7 @@ jobs:
     # --------------------------------------------------
     - name: Build VTM (Debug)
       run: |
-        cd fluffy_pancake
+        cd fluffy-pancake
 
         if [ ! -f bin/umake/gcc-11.4/x86_64/debug/EncoderApp ]; then
           echo "🔨 Cache miss → building VTM"
