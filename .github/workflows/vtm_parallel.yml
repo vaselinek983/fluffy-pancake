@@ -41,7 +41,7 @@ jobs:
 
     - name: Build VTM (Debug)
       run: |
-        cd VVCSoftware_VTM
+        cd fluffy-pancake
         mkdir build-debug
         cd build-debug
         cmake .. -DCMAKE_BUILD_TYPE=Debug
@@ -79,7 +79,7 @@ jobs:
     - name: Encode with VTM (Debug)
       run: |
         mkdir -p Dataset/${QP}/${{ matrix.video_id }}
-        cd VVCSoftware_VTM
+        cd fluffy-pancake
         ./bin/umake/gcc-11.4/x86_64/debug/EncoderApp \
           -c cfg/encoder_intra_vtm.cfg \
           -i ../Dataset/Inter4K/60fps/UHD/yuv/${{ matrix.video_id }}.yuv \
