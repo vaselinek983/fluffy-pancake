@@ -10,7 +10,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        video_id: [750, 751, 752, 753, 754]
+        video_id: [750, 751, 752, 753, 754, 755, 756, 757, 758, 759, 760]
 
     env:
       WIDTH: 3840
@@ -57,14 +57,14 @@ jobs:
       uses: actions/cache@v4
       with:
         path: |
-          VVCSoftware_VTM/bin
-          VVCSoftware_VTM/lib
+          fluffy_pancake/bin
+          fluffy_pancake/lib
         key: >
           ${{ runner.os }}-vtm-umake-debug-
           ${{ hashFiles(
-            'VVCSoftware_VTM/CMakeLists.txt',
-            'VVCSoftware_VTM/source/**',
-            'VVCSoftware_VTM/cfg/**'
+            'fluffy_pancake/CMakeLists.txt',
+            'fluffy_pancake/source/**',
+            'fluffy_pancake/cfg/**'
           ) }}
 
     # --------------------------------------------------
@@ -72,7 +72,7 @@ jobs:
     # --------------------------------------------------
     - name: Build VTM (Debug)
       run: |
-        cd VVCSoftware_VTM
+        cd fluffy_pancake
 
         if [ ! -f bin/umake/gcc-11.4/x86_64/debug/EncoderApp ]; then
           echo "🔨 Cache miss → building VTM"
