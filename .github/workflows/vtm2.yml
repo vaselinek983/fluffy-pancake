@@ -136,7 +136,7 @@ jobs:
         echo "Encoding SEQ=$SEQ QP=$QP_VAL"
 
         mkdir -p Dataset/$QP_VAL/$SEQ
-        cd VVCSoftware_VTM
+        cd fluffy-pancake
 
         ./bin/umake/gcc-11.4/x86_64/debug/EncoderApp \
           -c cfg/encoder_intra_vtm.cfg \
