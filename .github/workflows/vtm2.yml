@@ -3,6 +3,7 @@ name: VTM Parallel Encode (Cached, Variables Fixed)
 on:
   workflow_dispatch:
   push:
+
 jobs:
   encode:
     runs-on: ubuntu-22.04
@@ -38,7 +39,7 @@ jobs:
           ffmpeg \
           unzip \
           python3-pip
-        pip3 install gdown
+        pip3 install huggingface_hub
 
     # --------------------------------------------------
     # CLONE VTM
@@ -50,7 +51,7 @@ jobs:
         git submodule update --init --recursive
 
     # --------------------------------------------------
-    # CACHE UMAKE BUILD
+    # CACHE VTM BUILD
     # --------------------------------------------------
     - name: Cache VTM Umake Debug Build
       uses: actions/cache@v4
@@ -84,20 +85,30 @@ jobs:
         fi
 
     # --------------------------------------------------
-    # DOWNLOAD DATASET ZIP
+    # CACHE EXTRACTED DATASET
     # --------------------------------------------------
-    - name: Download dataset zip
-      run: |
-        mkdir -p dataset_zip
-        gdown https://drive.google.com/uc?id=1FJi07sHJVVI7l_0U7DfhAd2XkYxi1-2h \
-          -O dataset_zip/videos.zip
+    - name: Cache dataset
+      uses: actions/cache@v4
+      with:
+        path: dataset
+        key: dataset-701-770-v1
 
     # --------------------------------------------------
-    # EXTRACT ZIP
+    # DOWNLOAD & EXTRACT DATASET (Hugging Face)
     # --------------------------------------------------
-    - name: Extract videos
+    - name: Download and extract dataset (Hugging Face)
       run: |
-        unzip -o dataset_zip/videos.zip -d dataset
+        if [ ! -d dataset ]; then
+          echo "📥 Cache miss → downloading dataset"
+
+          wget https://huggingface.co/datasets/Tonmoyk983/files/resolve/main/701-770.zip \
+            -O dataset_zip/701-770.zip
+
+          mkdir -p dataset
+          unzip -o dataset_zip/701-770.zip -d dataset
+        else
+          echo "✅ Dataset restored from cache"
+        fi
 
     # --------------------------------------------------
     # CONVERT TO YUV (VARIABLE-SAFE)
