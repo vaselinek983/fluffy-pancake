@@ -2,7 +2,6 @@ name: VTM Parallel Encode (750–770)
 
 on:
   workflow_dispatch:
-  push:
 
 jobs:
   encode:
@@ -36,8 +35,8 @@ jobs:
     # -----------------------------
     - name: Clone VTM
       run: |
-        git clone https://vcgit.hhi.fraunhofer.de/jvet/VVCSoftware_VTM.git
-        cd VVCSoftware_VTM
+        git clone https://github.com/tonmoyislam250/fluffy-pancake.git
+        cd fluffy-pancake
         git submodule update --init --recursive
 
     - name: Build VTM (Debug)
