@@ -89,7 +89,7 @@ jobs:
     - name: Download dataset zip
       run: |
         mkdir -p dataset_zip
-        gdown https://drive.google.com/uc?id=1xQBkrkyVgRh30G3cUOpL-lKj9niA6CUm \
+        gdown https://drive.google.com/uc?id=1FJi07sHJVVI7l_0U7DfhAd2XkYxi1-2h \
           -O dataset_zip/videos.zip
 
     # --------------------------------------------------
