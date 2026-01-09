@@ -1,0 +1,105 @@
+name: VTM Parallel Encode (750–770)
+
+on:
+  workflow_dispatch:
+  push:
+
+jobs:
+  encode:
+    runs-on: ubuntu-22.04
+
+    strategy:
+      fail-fast: false
+      matrix:
+        video_id: [750, 751, 752, 753, 754]
+
+    env:
+      WIDTH: 3840
+      HEIGHT: 2160
+      FRAMERATE: 60
+      FRAMES: 1
+      QP: 22
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+
+    - name: Install dependencies
+      run: |
+        sudo apt update
+        sudo apt install -y \
+          build-essential cmake git ffmpeg unzip python3-pip
+        pip3 install gdown
+
+    # -----------------------------
+    # CLONE & BUILD VTM (DEBUG)
+    # -----------------------------
+    - name: Clone VTM
+      run: |
+        git clone https://vcgit.hhi.fraunhofer.de/jvet/VVCSoftware_VTM.git
+        cd VVCSoftware_VTM
+        git submodule update --init --recursive
+
+    - name: Build VTM (Debug)
+      run: |
+        cd VVCSoftware_VTM
+        mkdir build-debug
+        cd build-debug
+        cmake .. -DCMAKE_BUILD_TYPE=Debug
+        make -j$(nproc)
+
+    # -----------------------------
+    # DOWNLOAD & EXTRACT ZIP
+    # -----------------------------
+    - name: Download dataset zip
+      run: |
+        mkdir -p dataset_zip
+        gdown https://drive.google.com/uc?id=1ZQUFpORJ_EMTqAwHUW0S5Uo2_G4iP9A5 \
+          -O dataset_zip/videos.zip
+
+    - name: Extract zip
+      run: |
+        unzip dataset_zip/videos.zip -d dataset
+
+    # -----------------------------
+    # CONVERT TO YUV
+    # -----------------------------
+    - name: Convert video to YUV
+      run: |
+        mkdir -p Dataset/Inter4K/60fps/UHD/yuv
+        ffmpeg -y \
+          -i dataset/${{ matrix.video_id }}.mp4 \
+          -pix_fmt yuv420p \
+          -s ${WIDTH}x${HEIGHT} \
+          -r ${FRAMERATE} \
+          Dataset/Inter4K/60fps/UHD/yuv/${{ matrix.video_id }}.yuv
+
+    # -----------------------------
+    # ENCODE
+    # -----------------------------
+    - name: Encode with VTM (Debug)
+      run: |
+        mkdir -p Dataset/${QP}/${{ matrix.video_id }}
+        cd VVCSoftware_VTM
+        ./build-debug/bin/EncoderApp \
+          -c cfg/encoder_intra_vtm.cfg \
+          -i ../Dataset/Inter4K/60fps/UHD/yuv/${{ matrix.video_id }}.yuv \
+          -b ../Dataset/${QP}/${{ matrix.video_id }}/output_QP${QP}.bin \
+          -o ../Dataset/${QP}/${{ matrix.video_id }}/rec_QP${QP}.yuv \
+          --SourceWidth=${WIDTH} \
+          --SourceHeight=${HEIGHT} \
+          --FrameRate=${FRAMERATE} \
+          --FramesToBeEncoded=${FRAMES} \
+          --QP=${QP} \
+          --TraceFile="../Dataset/${QP}/${{ matrix.video_id }}/${{ matrix.video_id }}.csv" \
+          --TraceRule="D_BLOCK_STATISTICS_ALL:poc >=0" \
+          > ../Dataset/${QP}/${{ matrix.video_id }}/log_QP${QP}.txt
+
+    # -----------------------------
+    # UPLOAD RESULTS
+    # -----------------------------
+    - name: Upload artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: vtm-${{ matrix.video_id }}
+        path: Dataset/${QP}/${{ matrix.video_id }}
