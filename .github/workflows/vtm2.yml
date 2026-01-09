@@ -100,7 +100,7 @@ jobs:
       run: |
         if [ ! -d dataset ]; then
           echo "📥 Cache miss → downloading dataset"
-
+          mkdir -p dataset_zip
           wget https://huggingface.co/datasets/Tonmoyk983/files/resolve/main/701-770.zip \
             -O dataset_zip/701-770.zip
 
