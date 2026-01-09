@@ -10,13 +10,14 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        video_id: [737, 738, 739, 741, 743, 746, 748, 749]
+        video_id: [706, 707, 708, 709, 710, 711, 712, 713, 714, 715]
+        
     env:
       WIDTH: 3840
       HEIGHT: 2160
       FRAMERATE: 60
       FRAMES: 1
-      QP: 22
+      QP: 27
 
     steps:
     # --------------------------------------------------
