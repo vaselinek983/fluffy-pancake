@@ -10,7 +10,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        video_id: [736, 737, 738, 739, 740, 741, 742, 743, 744, 745, 746, 747, 748, 749]
+        video_id: [737, 738, 739, 741, 743, 746, 748, 749]
     env:
       WIDTH: 3840
       HEIGHT: 2160
