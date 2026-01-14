@@ -105,7 +105,7 @@ jobs:
           -O dataset_zip/videos.zip
 
           mkdir -p dataset
-          unzip -o dataset_zip/701-770.zip -d dataset
+          unzip -o dataset_zip/videos.zip -d dataset
         else
           echo "✅ Dataset restored from cache"
         fi
