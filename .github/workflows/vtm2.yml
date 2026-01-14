@@ -39,7 +39,7 @@ jobs:
           ffmpeg \
           unzip \
           python3-pip
-        pip3 install huggingface_hub
+        pip3 install huggingface_hub gdown
 
     # --------------------------------------------------
     # CLONE VTM
