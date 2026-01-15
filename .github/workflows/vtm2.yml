@@ -101,7 +101,7 @@ jobs:
         if [ ! -d dataset ]; then
           echo "📥 Cache miss → downloading dataset"
           mkdir -p dataset_zip
-          gdown https://drive.google.com/uc?id=1ZQUFpORJ_EMTqAwHUW0S5Uo2_G4iP9A5 \
+          gdown https://drive.google.com/uc?export=download&id=1wqihrsgxtabFuKbg_d7Mbmj4ryBii84d \
           -O dataset_zip/videos.zip
 
           mkdir -p dataset
