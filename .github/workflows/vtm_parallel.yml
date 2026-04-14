@@ -10,7 +10,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        video_id: [755, 756, 757, 758, 759, 760, 761, 762, 763, 764]
+        video_id: [308]
 
     env:
       WIDTH: 3840
@@ -53,7 +53,7 @@ jobs:
     - name: Download dataset zip
       run: |
         mkdir -p dataset_zip
-        gdown https://drive.google.com/uc?id=1ZQUFpORJ_EMTqAwHUW0S5Uo2_G4iP9A5 \
+        gdown 1YNdzhk0mxFln9_2MetHF1cJIsoeVCskh \
           -O dataset_zip/videos.zip
 
     - name: Extract zip
