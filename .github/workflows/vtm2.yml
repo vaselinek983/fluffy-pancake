@@ -17,7 +17,7 @@ jobs:
       HEIGHT: 2160
       FRAMERATE: 60
       FRAMES: 1
-      QP: 22
+      QP: 37
 
     steps:
     # --------------------------------------------------
@@ -91,7 +91,7 @@ jobs:
       uses: actions/cache@v4
       with:
         path: dataset
-        key: dataset-532-534-v1
+        key: dataset-120-v1
 
     # --------------------------------------------------
     # DOWNLOAD & EXTRACT DATASET (Hugging Face)
