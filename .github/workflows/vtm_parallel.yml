@@ -10,14 +10,14 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        video_id: [308]
+        video_id: [120]
 
     env:
       WIDTH: 3840
       HEIGHT: 2160
       FRAMERATE: 60
       FRAMES: 1
-      QP: 60
+      QP: 37
 
     steps:
     - name: Checkout
@@ -53,7 +53,7 @@ jobs:
     - name: Download dataset zip
       run: |
         mkdir -p dataset_zip
-        gdown 1ITpPxS0reaXVcYkCM0Ysl8KpKZfD4RHP \
+        gdown 1HYFzISIJJckgpgz0-mYYfpH2TXwG9bZN \
           -O dataset_zip/videos.zip
 
     - name: Extract zip
