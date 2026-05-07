@@ -14,7 +14,7 @@ jobs:
         VIDEO_ID: [1]
 
     env:
-      FRAME_LIMIT: 5   # 👉 set 10 for testing, 0 for full video
+      FRAME_LIMIT: 0   # 👉 set 10 for testing, 0 for full video
 
     steps:
     # ----------------------------------------
