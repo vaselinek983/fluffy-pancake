@@ -41,7 +41,7 @@ jobs:
     # ----------------------------------------
     - name: Verify FFmpeg
       run: |
-        FFMPEG=ffmpeg_bin/ffmpeg-master-latest-linux64-gpl-shared/bin/ffmpeg
+        FFMPEG=ffmpeg_bin/ffmpeg-master-latest-linux64-gpl/bin/ffmpeg
 
         $FFMPEG -hide_banner -version
         $FFMPEG -hide_banner -encoders | grep vvenc || echo "⚠️ vvenc NOT FOUND"
