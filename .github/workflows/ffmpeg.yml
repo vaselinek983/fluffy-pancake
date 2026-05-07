@@ -1,0 +1,119 @@
+name: FFmpeg vvenc Pipe (Dataset Cached)
+
+on:
+  workflow_dispatch:
+
+jobs:
+  convert:
+    runs-on: ubuntu-22.04
+
+    env:
+      VIDEO_ID: 1
+
+    steps:
+    # ----------------------------------------
+    # Checkout
+    # ----------------------------------------
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    # ----------------------------------------
+    # Install dependencies
+    # ----------------------------------------
+    - name: Install dependencies
+      run: |
+        sudo apt update
+        sudo apt install -y \
+          build-essential \
+          cmake \
+          git \
+          yasm \
+          pkg-config \
+          unzip \
+          megatools
+
+    # ----------------------------------------
+    # Cache dataset
+    # ----------------------------------------
+    - name: Cache dataset
+      uses: actions/cache@v4
+      with:
+        path: dataset
+        key: dataset-mega-v1-${{ runner.os }}
+
+    # ----------------------------------------
+    # Download dataset from MEGA (if cache miss)
+    # ----------------------------------------
+    - name: Download dataset (MEGA)
+      run: |
+        if [ ! -d dataset ]; then
+          echo "📥 Cache miss → downloading dataset"
+
+          mkdir -p dataset_zip
+
+          megadl "https://mega.nz/file/kIdhyATA#QjiOI1xFOZjRWpRUKSSPFRWzBx2WpUQ1PLfezxmt740" \
+            --path dataset_zip
+
+          mkdir -p dataset
+          unzip -o dataset_zip/*.zip -d dataset
+        else
+          echo "✅ Dataset restored from cache"
+        fi
+
+    # ----------------------------------------
+    # Install FFmpeg with libvvenc
+    # ----------------------------------------
+    - name: Install FFmpeg with libvvenc
+      run: |
+        if ffmpeg -encoders 2>/dev/null | grep -q libvvenc; then
+          echo "✅ System FFmpeg already has libvvenc"
+        else
+          echo "🔨 Building vvenc + FFmpeg"
+
+          # Build vvenc
+          git clone https://github.com/fraunhoferhhi/vvenc
+          cd vvenc
+          make -j$(nproc)
+          sudo make install
+          cd ..
+
+          # Build FFmpeg
+          git clone https://github.com/ffmpeg/ffmpeg
+          cd ffmpeg
+          ./configure --enable-gpl --enable-libvvenc
+          make -j$(nproc)
+          sudo make install
+          cd ..
+        fi
+
+        ffmpeg -hide_banner -encoders | grep vvenc
+
+    # ----------------------------------------
+    # Convert using PIPE (QP 32 → YUV420)
+    # ----------------------------------------
+    - name: Convert video to YUV (pipe)
+      run: |
+        mkdir -p output
+
+        INPUT="dataset/${{ env.VIDEO_ID }}.mp4"
+
+        echo "Processing $INPUT"
+
+        ffmpeg -y -i "$INPUT" \
+          -c:v libvvenc \
+          -qp 32 \
+          -pix_fmt yuv420p \
+          -f matroska - \
+        | ffmpeg -y -i - \
+          -pix_fmt yuv420p \
+          -f rawvideo \
+          output/${{ env.VIDEO_ID }}.yuv
+
+    # ----------------------------------------
+    # Upload output
+    # ----------------------------------------
+    - name: Upload YUV
+      uses: actions/upload-artifact@v4
+      with:
+        name: yuv-${{ env.VIDEO_ID }}
+        path: output/${{ env.VIDEO_ID }}.yuv
