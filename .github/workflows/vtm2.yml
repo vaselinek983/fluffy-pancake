@@ -11,13 +11,13 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        video_id: [120]
+        video_id: [50]
     env:
       WIDTH: 3840
       HEIGHT: 2160
       FRAMERATE: 60
-      FRAMES: 1
-      QP: 37
+      FRAMES: 10
+      QP: 32
 
     steps:
     # --------------------------------------------------
@@ -37,7 +37,7 @@ jobs:
           cmake \
           git \
           ffmpeg \
-          unzip \
+          unzip megatools \
           python3-pip
         pip3 install huggingface_hub gdown
 
@@ -101,8 +101,8 @@ jobs:
         if [ ! -d dataset ]; then
           echo "📥 Cache miss → downloading dataset"
           mkdir -p dataset_zip
-          gdown 1HYFzISIJJckgpgz0-mYYfpH2TXwG9bZN \
-          -O dataset_zip/videos.zip
+          megadl "https://mega.nz/file/kIdhyATA#QjiOI1xFOZjRWpRUKSSPFRWzBx2WpUQ1PLfezxmt740" \
+          --path dataset_zip
 
           mkdir -p dataset
           unzip -o dataset_zip/videos.zip -d dataset
@@ -149,7 +149,7 @@ jobs:
         cd fluffy-pancake
 
         ./bin/umake/gcc-11.4/x86_64/debug/EncoderApp \
-          -c cfg/encoder_intra_vtm.cfg \
+          -c cfg/encoder_lowdelay_P_vtm.cfg \
           -i ../Dataset/Inter4K/60fps/UHD/yuv/$SEQ.yuv \
           -b ../Dataset/$QP_VAL/$SEQ/output_QP$QP_VAL.bin \
           -o ../Dataset/$QP_VAL/$SEQ/rec_QP$QP_VAL.yuv \
@@ -158,8 +158,6 @@ jobs:
           --FrameRate=$FR_VAL \
           --FramesToBeEncoded=$FRAMES_VAL \
           --QP=$QP_VAL \
-          --TraceFile="../Dataset/$QP_VAL/$SEQ/$SEQ.csv" \
-          --TraceRule="D_BLOCK_STATISTICS_ALL:poc >=0" \
           > ../Dataset/$QP_VAL/$SEQ/log_QP$QP_VAL.txt
 
     # --------------------------------------------------
