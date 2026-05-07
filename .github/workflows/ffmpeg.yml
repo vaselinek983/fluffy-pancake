@@ -80,7 +80,7 @@ jobs:
       run: |
         mkdir -p output
 
-        FFMPEG=ffmpeg_bin/ffmpeg-master-latest-linux64-gpl-shared/bin/ffmpeg
+        FFMPEG=ffmpeg_bin/ffmpeg-master-latest-linux64-gpl/bin/ffmpeg
         INPUT="dataset/${{ env.VIDEO_ID }}.mp4"
 
         echo "Processing $INPUT"
