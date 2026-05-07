@@ -1,52 +1,26 @@
-name: Cache Dataset (MEGA Login)
+- name: Install mega-cmd
+  run: |
+    sudo apt update
+    sudo apt install -y mega-cmd unzip
 
-on:
-  workflow_dispatch:
+- name: Download dataset (mega-cmd login)
+  env:
+    MEGA_USER: ${{ secrets.MEGA_USER }}
+    MEGA_PASS: ${{ secrets.MEGA_PASS }}
+  run: |
+    if [ ! -d dataset ]; then
+      echo "📥 Downloading with mega-cmd"
 
-jobs:
-  cache-dataset:
-    runs-on: ubuntu-22.04
+      mkdir -p dataset_zip
 
-    steps:
-    # ----------------------------------------
-    # Install dependencies
-    # ----------------------------------------
-    - name: Install dependencies
-      run: |
-        sudo apt update
-        sudo apt install -y unzip megatools
+      mega-login "$MEGA_USER" "$MEGA_PASS"
 
-    # ----------------------------------------
-    # Restore cache
-    # ----------------------------------------
-    - name: Restore dataset cache
-      uses: actions/cache@v4
-      with:
-        path: dataset
-        key: dataset-mega-v1-${{ runner.os }}
+      mega-get "https://mega.nz/file/kIdhyATA#QjiOI1xFOZjRWpRUKSSPFRWzBx2WpUQ1PLfezxmt740" dataset_zip/
 
-    # ----------------------------------------
-    # Download dataset using MEGA login
-    # ----------------------------------------
-    - name: Download dataset (MEGA with login)
-      env:
-        MEGA_USER: ${{ secrets.MEGA_USER }}
-        MEGA_PASS: ${{ secrets.MEGA_PASS }}
-      run: |
-        if [ ! -d dataset ]; then
-          echo "📥 Cache miss → downloading dataset with MEGA account"
+      mkdir -p dataset
+      unzip -o dataset_zip/*.zip -d dataset
 
-          mkdir -p dataset_zip
-
-          megadl \
-            --username "$MEGA_USER" \
-            --password "$MEGA_PASS" \
-            "https://mega.nz/file/kIdhyATA#QjiOI1xFOZjRWpRUKSSPFRWzBx2WpUQ1PLfezxmt740" \
-            --path dataset_zip
-
-          mkdir -p dataset
-          unzip -o dataset_zip/*.zip -d dataset
-
-        else
-          echo "✅ Dataset restored from cache"
-        fi
+      mega-logout
+    else
+      echo "✅ Dataset restored from cache"
+    fi
