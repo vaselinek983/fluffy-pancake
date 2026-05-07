@@ -37,7 +37,7 @@ jobs:
         tar -xf ffmpeg-master-latest-linux64-gpl.tar.xz
 
     # ----------------------------------------
-    # Verify FFmpeg + vvenc (FULL PATH)
+    # Verify FFmpeg + vvenc
     # ----------------------------------------
     - name: Verify FFmpeg
       run: |
@@ -74,9 +74,9 @@ jobs:
         fi
 
     # ----------------------------------------
-    # Convert using PIPE (FULL PATH)
+    # Convert using VVENC PIPE (FIXED)
     # ----------------------------------------
-    - name: Convert MP4 → YUV (QP 32)
+    - name: Convert MP4 → YUV (VVENC, 10 frames)
       run: |
         mkdir -p output
 
@@ -90,8 +90,10 @@ jobs:
           -c:v libvvenc \
           -qp 32 \
           -pix_fmt yuv420p \
+          -an \
           -f matroska - \
-        | $FFMPEG -y -i - \
+        | $FFMPEG -y -fflags +genpts -i - \
+          -vsync 0 \
           -frames:v 10 \
           -pix_fmt yuv420p \
           -f rawvideo \
