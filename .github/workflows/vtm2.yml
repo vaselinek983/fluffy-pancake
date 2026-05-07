@@ -15,7 +15,7 @@ jobs:
       WIDTH: 3840
       HEIGHT: 2160
       FRAMERATE: 60
-      FRAMES: 10
+      FRAMES: 300
       QP: 32
 
     steps:
