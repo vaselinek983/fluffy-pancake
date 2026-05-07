@@ -1,4 +1,4 @@
-name: Cache Dataset (MEGA)
+name: Cache Dataset (MEGA Login)
 
 on:
   workflow_dispatch:
@@ -9,7 +9,7 @@ jobs:
 
     steps:
     # ----------------------------------------
-    # Install tools
+    # Install dependencies
     # ----------------------------------------
     - name: Install dependencies
       run: |
@@ -17,7 +17,7 @@ jobs:
         sudo apt install -y unzip megatools
 
     # ----------------------------------------
-    # Cache dataset
+    # Restore cache
     # ----------------------------------------
     - name: Restore dataset cache
       uses: actions/cache@v4
@@ -26,16 +26,22 @@ jobs:
         key: dataset-mega-v1-${{ runner.os }}
 
     # ----------------------------------------
-    # Download if cache miss
+    # Download dataset using MEGA login
     # ----------------------------------------
-    - name: Download dataset (if needed)
+    - name: Download dataset (MEGA with login)
+      env:
+        MEGA_USER: ${{ secrets.MEGA_USER }}
+        MEGA_PASS: ${{ secrets.MEGA_PASS }}
       run: |
         if [ ! -d dataset ]; then
-          echo "📥 Cache miss → downloading dataset"
+          echo "📥 Cache miss → downloading dataset with MEGA account"
 
           mkdir -p dataset_zip
 
-          megadl "https://mega.nz/file/kIdhyATA#QjiOI1xFOZjRWpRUKSSPFRWzBx2WpUQ1PLfezxmt740" \
+          megadl \
+            --username "$MEGA_USER" \
+            --password "$MEGA_PASS" \
+            "https://mega.nz/file/kIdhyATA#QjiOI1xFOZjRWpRUKSSPFRWzBx2WpUQ1PLfezxmt740" \
             --path dataset_zip
 
           mkdir -p dataset
