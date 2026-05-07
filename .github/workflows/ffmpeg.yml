@@ -86,11 +86,13 @@ jobs:
         echo "Processing $INPUT"
 
         $FFMPEG -y -i "$INPUT" \
+          -frames:v 10 \
           -c:v libvvenc \
           -qp 32 \
           -pix_fmt yuv420p \
           -f matroska - \
         | $FFMPEG -y -i - \
+          -frames:v 10 \
           -pix_fmt yuv420p \
           -f rawvideo \
           output/${{ env.VIDEO_ID }}.yuv
