@@ -148,4 +148,4 @@ jobs:
     # ----------------------------------------
     - name: Upload dataset to Drive
       run: |
-        rclone copy From_Inter4K remote:From_Inter4K --progress
+        rclone copy From_Inter4K dataset:From_Inter4K --progress
