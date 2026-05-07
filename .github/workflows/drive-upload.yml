@@ -1,0 +1,151 @@
+name: VVENC → Inter4K Dataset → Google Drive
+
+on:
+  workflow_dispatch:
+
+jobs:
+  convert:
+    runs-on: ubuntu-22.04
+
+    strategy:
+      fail-fast: false
+      max-parallel: 5
+      matrix:
+        VIDEO_ID: [1,2,3,4,5]   # <-- change range as needed
+
+    steps:
+    # ----------------------------------------
+    # Checkout
+    # ----------------------------------------
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    # ----------------------------------------
+    # Install dependencies
+    # ----------------------------------------
+    - name: Install dependencies
+      run: |
+        sudo apt update
+        sudo apt install -y unzip xz-utils megatools wget
+
+    # ----------------------------------------
+    # Download FFmpeg
+    # ----------------------------------------
+    - name: Download FFmpeg
+      run: |
+        mkdir -p ffmpeg_bin
+        cd ffmpeg_bin
+        wget https://github.com/BtbN/FFmpeg-Builds/releases/download/latest/ffmpeg-master-latest-linux64-gpl.tar.xz
+        tar -xf ffmpeg-master-latest-linux64-gpl.tar.xz
+
+    # ----------------------------------------
+    # Set variables
+    # ----------------------------------------
+    - name: Set variables
+      run: |
+        echo "FFMPEG=ffmpeg_bin/ffmpeg-master-latest-linux64-gpl/bin/ffmpeg" >> $GITHUB_ENV
+        echo "INPUT=dataset/${{ matrix.VIDEO_ID }}.mp4" >> $GITHUB_ENV
+
+    # ----------------------------------------
+    # Cache dataset
+    # ----------------------------------------
+    - name: Cache dataset
+      uses: actions/cache@v4
+      with:
+        path: dataset
+        key: dataset-mega-v1-${{ runner.os }}
+
+    # ----------------------------------------
+    # Download dataset
+    # ----------------------------------------
+    - name: Download dataset
+      run: |
+        if [ ! -d dataset ]; then
+          mkdir -p dataset_zip
+          megadl "https://mega.nz/file/kIdhyATA#QjiOI1xFOZjRWpRUKSSPFRWzBx2WpUQ1PLfezxmt740" --path dataset_zip
+          mkdir -p dataset
+          unzip -o dataset_zip/*.zip -d dataset
+        fi
+
+    # ----------------------------------------
+    # VVENC encode → decode → YUV
+    # ----------------------------------------
+    - name: Generate reconstructed YUV
+      run: |
+        mkdir -p output
+
+        $FFMPEG -y -i "$INPUT" \
+          -c:v libvvenc \
+          -qp 32 \
+          -pix_fmt yuv420p \
+          -an \
+          -f matroska - \
+        | $FFMPEG -y -fflags +genpts -i - \
+          -vsync 0 \
+          -pix_fmt yuv420p \
+          -f rawvideo \
+          output/${{ matrix.VIDEO_ID }}.yuv
+
+    # ----------------------------------------
+    # Generate Inter4K dataset (60-frame gap)
+    # ----------------------------------------
+    - name: Create Inter4K samples
+      run: |
+        mkdir -p From_Inter4K/Raw/Input
+        mkdir -p From_Inter4K/Raw/Output
+
+        WIDTH=3840
+        HEIGHT=2160
+        PIXFMT=yuv420p
+
+        INPUT_YUV="output/${{ matrix.VIDEO_ID }}.yuv"
+
+        FRAME_SIZE=$((WIDTH * HEIGHT * 3 / 2))
+        TOTAL_SIZE=$(stat -c%s "$INPUT_YUV")
+        TOTAL_FRAMES=$((TOTAL_SIZE / FRAME_SIZE))
+
+        echo "Total frames: $TOTAL_FRAMES"
+
+        for ((f=0; f+3<TOTAL_FRAMES; f+=60)); do
+          echo "Frame group $f"
+
+          # Inputs: f, f+1, f+2
+          for i in 0 1 2; do
+            IDX=$((f + i))
+            OUTFILE=$(printf "From_Inter4K/Raw/Input/Intet4K_vid_%04d_f%03d_in%d.yuv" \
+              ${{ matrix.VIDEO_ID }} $IDX $((i+1)))
+
+            dd if="$INPUT_YUV" of="$OUTFILE" \
+              bs=$FRAME_SIZE skip=$IDX count=1 status=none
+          done
+
+          # Output: f+3
+          OUT_IDX=$((f + 3))
+          OUTFILE=$(printf "From_Inter4K/Raw/Output/Intet4K_vid_%04d_f%03d_out.yuv" \
+            ${{ matrix.VIDEO_ID }} $f)
+
+          dd if="$INPUT_YUV" of="$OUTFILE" \
+            bs=$FRAME_SIZE skip=$OUT_IDX count=1 status=none
+        done
+
+    # ----------------------------------------
+    # Install rclone
+    # ----------------------------------------
+    - name: Install rclone
+      run: |
+        curl https://rclone.org/install.sh | sudo bash
+
+    # ----------------------------------------
+    # Configure rclone
+    # ----------------------------------------
+    - name: Configure rclone
+      run: |
+        mkdir -p ~/.config/rclone
+        echo "${{ secrets.RCLONE_CONFIG }}" > ~/.config/rclone/rclone.conf
+
+    # ----------------------------------------
+    # Upload to Google Drive
+    # ----------------------------------------
+    - name: Upload dataset to Drive
+      run: |
+        rclone copy From_Inter4K remote:From_Inter4K --progress
