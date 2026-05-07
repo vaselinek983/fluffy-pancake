@@ -9,7 +9,6 @@ jobs:
 
     strategy:
       fail-fast: false
-      max-parallel: 5
       matrix:
         VIDEO_ID: [1]
 
