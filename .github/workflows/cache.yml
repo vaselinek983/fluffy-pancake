@@ -1,26 +1,63 @@
-- name: Install mega-cmd
-  run: |
-    sudo apt update
-    sudo apt install -y mega-cmd unzip
+name: Cache Dataset (MEGA CMD Login)
 
-- name: Download dataset (mega-cmd login)
-  env:
-    MEGA_USER: ${{ secrets.MEGA_USER }}
-    MEGA_PASS: ${{ secrets.MEGA_PASS }}
-  run: |
-    if [ ! -d dataset ]; then
-      echo "📥 Downloading with mega-cmd"
+on:
+  workflow_dispatch:
 
-      mkdir -p dataset_zip
+jobs:
+  cache-dataset:
+    runs-on: ubuntu-22.04
 
-      mega-login "$MEGA_USER" "$MEGA_PASS"
+    steps:
+    # ----------------------------------------
+    # Install dependencies
+    # ----------------------------------------
+    - name: Install mega-cmd + unzip
+      run: |
+        sudo apt update
+        sudo apt install -y mega-cmd unzip
 
-      mega-get "https://mega.nz/file/kIdhyATA#QjiOI1xFOZjRWpRUKSSPFRWzBx2WpUQ1PLfezxmt740" dataset_zip/
+    # ----------------------------------------
+    # Restore cache
+    # ----------------------------------------
+    - name: Restore dataset cache
+      uses: actions/cache@v4
+      with:
+        path: dataset
+        key: dataset-mega-v1-${{ runner.os }}
 
-      mkdir -p dataset
-      unzip -o dataset_zip/*.zip -d dataset
+    # ----------------------------------------
+    # Download dataset using mega-cmd (LOGIN + RETRY)
+    # ----------------------------------------
+    - name: Download dataset (mega-cmd)
+      env:
+        MEGA_USER: ${{ secrets.MEGA_USER }}
+        MEGA_PASS: ${{ secrets.MEGA_PASS }}
+      run: |
+        if [ ! -d dataset ]; then
+          echo "📥 Cache miss → downloading dataset via mega-cmd"
 
-      mega-logout
-    else
-      echo "✅ Dataset restored from cache"
-    fi
+          mkdir -p dataset_zip
+
+          # Login
+          mega-login "$MEGA_USER" "$MEGA_PASS"
+
+          # Retry loop (important for CI stability)
+          for i in {1..5}; do
+            echo "Attempt $i..."
+
+            mega-get "https://mega.nz/file/kIdhyATA#QjiOI1xFOZjRWpRUKSSPFRWzBx2WpUQ1PLfezxmt740" dataset_zip/ && break
+
+            echo "⚠️ Failed attempt $i, retrying in 2 minutes..."
+            sleep 120
+          done
+
+          # Logout (cleanup session)
+          mega-logout
+
+          # Extract
+          mkdir -p dataset
+          unzip -o dataset_zip/*.zip -d dataset
+
+        else
+          echo "✅ Dataset restored from cache"
+        fi
