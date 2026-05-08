@@ -70,7 +70,7 @@ with open(os.path.expanduser("~/.config/rclone/rclone.conf"), "wb") as f:
 print("Downloading dataset from Google Drive...")
 
 subprocess.run(
-    f"{rclone_path} copy gdrive:upload_data {LOCAL_DIR} "
+    f"{rclone_path} copy dataset:upload_data {LOCAL_DIR} "
     "--progress --transfers 8 --checkers 8 --retries 5",
     shell=True,
     check=True
