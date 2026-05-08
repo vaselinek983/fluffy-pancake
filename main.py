@@ -3,11 +3,20 @@ import subprocess
 import kagglehub
 import base64
 
-DATASET_HANDLE = "tonmoyk983/quadruplet-dataset-60"
+DATASET_HANDLE = "tonmoyk983/test-dataset-1"
 LOCAL_DIR = "upload_data"
 
 # -----------------------------
-# Kaggle setup
+# 0. Install required system tools
+# -----------------------------
+subprocess.run(
+    "apt update && apt install -y curl unzip wget ca-certificates",
+    shell=True,
+    check=True
+)
+
+# -----------------------------
+# 1. Setup Kaggle credentials
 # -----------------------------
 os.makedirs(os.path.expanduser("~/.kaggle"), exist_ok=True)
 
@@ -19,17 +28,17 @@ with open(os.path.expanduser("~/.kaggle/kaggle.json"), "w") as f:
 
 os.chmod(os.path.expanduser("~/.kaggle/kaggle.json"), 0o600)
 
-
-# Install curl if missing
-subprocess.run("apt update && apt install -y curl", shell=True, check=True)
+# -----------------------------
+# 2. Install rclone (now curl exists)
+# -----------------------------
+subprocess.run(
+    "curl https://rclone.org/install.sh | bash",
+    shell=True,
+    check=True
+)
 
 # -----------------------------
-# Install rclone
-# -----------------------------
-subprocess.run("curl https://rclone.org/install.sh | bash", shell=True, check=True)
-
-# -----------------------------
-# Setup rclone config
+# 3. Setup rclone config
 # -----------------------------
 os.makedirs(os.path.expanduser("~/.config/rclone"), exist_ok=True)
 
@@ -37,16 +46,16 @@ with open(os.path.expanduser("~/.config/rclone/rclone.conf"), "wb") as f:
     f.write(base64.b64decode(os.environ["RCLONE_CONFIG_BASE64"]))
 
 # -----------------------------
-# Download dataset from Drive
+# 4. Download dataset from Drive
 # -----------------------------
 subprocess.run(
-    f"rclone copy gdrive:upload_data {LOCAL_DIR} --progress",
+    f"rclone copy gdrive:upload_data {LOCAL_DIR} --progress --transfers 8 --checkers 8",
     shell=True,
     check=True
 )
 
 # -----------------------------
-# Upload to Kaggle
+# 5. Upload to Kaggle
 # -----------------------------
 kagglehub.dataset_upload(
     DATASET_HANDLE,
@@ -54,4 +63,4 @@ kagglehub.dataset_upload(
     version_notes="Uploaded via Railway"
 )
 
-print("✅ Done!")
+print("✅ Upload completed successfully!")
