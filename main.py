@@ -3,7 +3,7 @@ import subprocess
 import kagglehub
 import base64
 
-DATASET_HANDLE = "tonmoyk983/test-dataset-1"
+DATASET_HANDLE = "tonmoyk983/quadruplet-dataset-60"
 LOCAL_DIR = "upload_data"
 
 # -----------------------------
