@@ -131,7 +131,6 @@ jobs:
           for ((START=1; START+7<=TOTAL_FRAMES; START+=STRIDE)); do
             TARGET=$((START + 7))
 
-            printf -v START_PAD "%03d" "$START"
             printf -v TARGET_PAD "%03d" "$TARGET"
 
             echo "Processing START=$START TARGET=$TARGET"
@@ -155,9 +154,16 @@ jobs:
 
             # Copy 1..7 input frames to final names
             for i in 1 2 3 4 5 6 7; do
+              # ADDED: Calculate the exact frame number for this input index
+              FRAME_NUM=$((START + i - 1))
+              # ADDED: Pad the calculated frame number
+              printf -v FRAME_PAD "%03d" "$FRAME_NUM"
+              
               printf -v IDX "%06d" "$i"
+              
+              # UPDATED: Use $FRAME_PAD instead of $START_PAD
               cp "$SAMPLE_DIR/in_${IDX}.png" \
-                upload_data/VCIP_png/Raw/Input/VCIP_vid_${{ matrix.VIDEO_ID }}_f${START_PAD}_in${i}.png
+                upload_data/VCIP_png/Raw/Input/VCIP_vid_${{ matrix.VIDEO_ID }}_f${FRAME_PAD}_in${i}.png
             done
 
             # Extract output frame from original video
