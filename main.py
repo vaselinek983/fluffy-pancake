@@ -4,8 +4,8 @@ import kagglehub
 import base64
 import urllib.request
 
-DATASET_HANDLE = "tonmoyk983/test-dataset-1"
-LOCAL_DIR = "upload_data"
+DATASET_HANDLE = "tonmoyk983/sevtone-dataset-80"
+LOCAL_DIR = "sevtone"
 
 # -----------------------------
 # 0. Install required tools
@@ -70,7 +70,7 @@ with open(os.path.expanduser("~/.config/rclone/rclone.conf"), "wb") as f:
 print("Downloading dataset from Google Drive...")
 
 subprocess.run(
-    f"{rclone_path} copy dataset:upload_data {LOCAL_DIR} "
+    f"{rclone_path} copy dataset:sevtone {LOCAL_DIR} "
     "--progress --transfers 8 --checkers 8 --retries 5",
     shell=True,
     check=True
