@@ -3,10 +3,20 @@ import subprocess
 import kagglehub
 import base64
 import urllib.request
-import zipfile
 
-DATASET_HANDLE = "tonmoyk983/sevtone-dataset-80"
+DATASET_HANDLE = "tonmoyk983/sevtone-half-inter4k-input"
 LOCAL_DIR = "sevtone"
+
+# -----------------------------
+# 0. Install required tools
+# -----------------------------
+print("Installing system tools...")
+
+subprocess.run(
+    "apt update && apt install -y unzip ca-certificates",
+    shell=True,
+    check=True
+)
 
 # -----------------------------
 # 1. Setup Kaggle credentials
@@ -21,34 +31,49 @@ with open(os.path.expanduser("~/.kaggle/kaggle.json"), "w") as f:
   "key": "{os.environ['KAGGLE_KEY']}"
 }}""")
 
-os.chmod(os.path.expanduser("~/.kaggle/kaggle.json"), 0o600)
+os.chmod(
+    os.path.expanduser("~/.kaggle/kaggle.json"),
+    0o600
+)
 
 # -----------------------------
-# 2. Download rclone manually
+# 2. Install rclone
 # -----------------------------
 print("Installing rclone...")
 
 url = "https://downloads.rclone.org/rclone-current-linux-amd64.zip"
+zip_path = "rclone.zip"
 
-urllib.request.urlretrieve(url, "rclone.zip")
-
-with zipfile.ZipFile("rclone.zip", "r") as zip_ref:
-    zip_ref.extractall()
-
-folder = [f for f in os.listdir() if f.startswith("rclone-")][0]
-
-rclone_path = os.path.abspath(
-    os.path.join(folder, "rclone")
-)
-
-os.chmod(rclone_path, 0o755)
+urllib.request.urlretrieve(url, zip_path)
 
 subprocess.run(
-    [rclone_path, "version"],
+    "unzip -o rclone.zip",
+    shell=True,
     check=True
 )
 
-print("✅ Rclone ready")
+folder = [
+    f for f in os.listdir()
+    if f.startswith("rclone-")
+][0]
+
+rclone_path = os.path.abspath(
+    f"{folder}/rclone"
+)
+
+subprocess.run(
+    f"chmod +x {rclone_path}",
+    shell=True,
+    check=True
+)
+
+subprocess.run(
+    f"{rclone_path} version",
+    shell=True,
+    check=True
+)
+
+print("✅ Rclone ready:", rclone_path)
 
 # -----------------------------
 # 3. Setup rclone config
@@ -61,43 +86,81 @@ os.makedirs(
 )
 
 with open(
-    os.path.expanduser("~/.config/rclone/rclone.conf"),
+    os.path.expanduser(
+        "~/.config/rclone/rclone.conf"
+    ),
     "wb"
 ) as f:
+
     f.write(
         base64.b64decode(
             os.environ["RCLONE_CONFIG_BASE64"]
         )
     )
 
-# -----------------------------
-# 4. Download from Drive
-# -----------------------------
-print("Downloading dataset...")
+print("✅ Rclone configured")
 
-subprocess.run([
-    rclone_path,
-    "copy",
-    "dataset:sevtone",
-    LOCAL_DIR,
-    "--progress",
-    "--transfers", "8",
-    "--checkers", "8",
-    "--retries", "5"
-], check=True)
+# -----------------------------
+# 4. Create HALF file list
+# -----------------------------
+print("Reading file list from Google Drive...")
+
+result = subprocess.run(
+    f"{rclone_path} lsf dataset:sevtone/Inter4K_png/Raw/Input -R",
+    shell=True,
+    capture_output=True,
+    text=True,
+    check=True
+)
+
+files = sorted([
+    f.strip()
+    for f in result.stdout.splitlines()
+    if f.strip()
+])
+
+total_files = len(files)
+half_files = total_files // 2
+
+print(f"Total files found: {total_files}")
+print(f"Downloading: {half_files}")
+
+with open("half_files.txt", "w") as f:
+    for file in files[:half_files]:
+        f.write(file + "\n")
+
+print("✅ File list prepared")
+
+# -----------------------------
+# 5. Download HALF dataset
+# -----------------------------
+print("Downloading half dataset...")
+
+subprocess.run(
+    f"{rclone_path} copy "
+    f"dataset:sevtone/Inter4K_png/Raw/Input "
+    f"{LOCAL_DIR} "
+    f"--files-from half_files.txt "
+    f"--progress "
+    f"--transfers 8 "
+    f"--checkers 8 "
+    f"--retries 5",
+    shell=True,
+    check=True
+)
 
 print("✅ Download complete")
 
 # -----------------------------
-# 5. Upload to Kaggle
+# 6. Upload to Kaggle
 # -----------------------------
 print("Uploading to Kaggle...")
 
 kagglehub.dataset_upload(
     DATASET_HANDLE,
     LOCAL_DIR,
-    version_notes="Uploaded via Render",
+    version_notes="Uploaded first half of Inter4K_png/Raw/Input sorted by filename",
     is_private=False
 )
 
-print("🎉 Upload completed")
+print("🎉 Upload completed successfully!")
