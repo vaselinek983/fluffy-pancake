@@ -4,7 +4,7 @@ import kagglehub
 import base64
 import urllib.request
 
-DATASET_HANDLE = "tonmoyk983/sevtone-half-inter4k-input"
+DATASET_HANDLE = "tonmoyk983/sevtone-half-inter4k_vcip"
 LOCAL_DIR = "sevtone"
 
 # -----------------------------
@@ -23,9 +23,16 @@ subprocess.run(
 # -----------------------------
 print("Setting up Kaggle credentials...")
 
-os.makedirs(os.path.expanduser("~/.kaggle"), exist_ok=True)
+os.makedirs(
+    os.path.expanduser("~/.kaggle"),
+    exist_ok=True
+)
 
-with open(os.path.expanduser("~/.kaggle/kaggle.json"), "w") as f:
+with open(
+    os.path.expanduser("~/.kaggle/kaggle.json"),
+    "w"
+) as f:
+
     f.write(f"""{{
   "username": "{os.environ['KAGGLE_USERNAME']}",
   "key": "{os.environ['KAGGLE_KEY']}"
@@ -44,7 +51,10 @@ print("Installing rclone...")
 url = "https://downloads.rclone.org/rclone-current-linux-amd64.zip"
 zip_path = "rclone.zip"
 
-urllib.request.urlretrieve(url, zip_path)
+urllib.request.urlretrieve(
+    url,
+    zip_path
+)
 
 subprocess.run(
     "unzip -o rclone.zip",
@@ -67,13 +77,7 @@ subprocess.run(
     check=True
 )
 
-subprocess.run(
-    f"{rclone_path} version",
-    shell=True,
-    check=True
-)
-
-print("✅ Rclone ready:", rclone_path)
+print("✅ Rclone ready")
 
 # -----------------------------
 # 3. Setup rclone config
@@ -98,12 +102,23 @@ with open(
         )
     )
 
-print("✅ Rclone configured")
+# -----------------------------
+# Create output folders
+# -----------------------------
+os.makedirs(
+    f"{LOCAL_DIR}/Inter4K_png/Raw/Input",
+    exist_ok=True
+)
+
+os.makedirs(
+    f"{LOCAL_DIR}/VCIP_png",
+    exist_ok=True
+)
 
 # -----------------------------
-# 4. Create HALF file list
+# 4. Read Inter4K file list
 # -----------------------------
-print("Reading file list from Google Drive...")
+print("Reading Inter4K files...")
 
 result = subprocess.run(
     f"{rclone_path} lsf dataset:sevtone/Inter4K_png/Raw/Input -R",
@@ -114,33 +129,35 @@ result = subprocess.run(
 )
 
 files = sorted([
-    f.strip()
-    for f in result.stdout.splitlines()
-    if f.strip()
+    x.strip()
+    for x in result.stdout.splitlines()
+    if x.strip()
 ])
 
 total_files = len(files)
-half_files = total_files // 2
+half = total_files // 2
 
-print(f"Total files found: {total_files}")
-print(f"Downloading: {half_files}")
+print(f"Total Inter4K files: {total_files}")
+print(f"Downloading SECOND half: {half+1} → {total_files}")
 
-with open("half_files.txt", "w") as f:
-    for file in files[:half_files]:
+with open(
+    "second_half.txt",
+    "w"
+) as f:
+
+    for file in files[half:]:
         f.write(file + "\n")
 
-print("✅ File list prepared")
-
 # -----------------------------
-# 5. Download HALF dataset
+# 5. Download SECOND HALF
 # -----------------------------
-print("Downloading half dataset...")
+print("Downloading second half of Inter4K...")
 
 subprocess.run(
     f"{rclone_path} copy "
     f"dataset:sevtone/Inter4K_png/Raw/Input "
-    f"{LOCAL_DIR} "
-    f"--files-from half_files.txt "
+    f"{LOCAL_DIR}/Inter4K_png/Raw/Input "
+    f"--files-from second_half.txt "
     f"--progress "
     f"--transfers 8 "
     f"--checkers 8 "
@@ -149,18 +166,39 @@ subprocess.run(
     check=True
 )
 
-print("✅ Download complete")
+print("✅ Inter4K second half complete")
 
 # -----------------------------
-# 6. Upload to Kaggle
+# 6. Download FULL VCIP
+# -----------------------------
+print("Downloading complete VCIP...")
+
+subprocess.run(
+    f"{rclone_path} copy "
+    f"dataset:sevtone/VCIP_png "
+    f"{LOCAL_DIR}/VCIP_png "
+    f"--progress "
+    f"--transfers 8 "
+    f"--checkers 8 "
+    f"--retries 5",
+    shell=True,
+    check=True
+)
+
+print("✅ VCIP complete")
+
+# -----------------------------
+# 7. Upload to Kaggle
 # -----------------------------
 print("Uploading to Kaggle...")
 
 kagglehub.dataset_upload(
     DATASET_HANDLE,
     LOCAL_DIR,
-    version_notes="Uploaded first half of Inter4K_png/Raw/Input sorted by filename",
-    is_private=False
+    version_notes=(
+        "Second half of Inter4K_png/Raw/Input "
+        "+ complete VCIP_png"
+    )
 )
 
 print("🎉 Upload completed successfully!")
