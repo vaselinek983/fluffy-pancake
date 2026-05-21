@@ -41,7 +41,11 @@ zip_path = "rclone.zip"
 
 urllib.request.urlretrieve(url, zip_path)
 
-subprocess.run("unzip rclone.zip", shell=True, check=True)
+subprocess.run(
+    "rm -rf rclone-v1.74.1-linux-amd64 && unzip rclone.zip",
+    shell=True,
+    check=True
+)
 
 # Find extracted folder
 folder = [f for f in os.listdir() if f.startswith("rclone-")][0]
