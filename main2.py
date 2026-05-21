@@ -4,7 +4,7 @@ import kagglehub
 import base64
 import urllib.request
 
-DATASET_HANDLE = "tonmoyk983/quadruple-dataset_org-60"
+DATASET_HANDLE = "tonmoyk983/quadruple-dataset-org-60"
 LOCAL_DIR = "upload_data"
 
 # -----------------------------
