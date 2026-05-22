@@ -4,12 +4,10 @@ import kagglehub
 import base64
 import urllib.request
 import re
+import shutil
 
-DATASET_HANDLE = "tonmoyk983/sevtone-half-inter4k-input"
-
-# Folder structure to keep in Kaggle
-LOCAL_DIR = "sevtone/Inter4K_png/Raw/Input"
-DATASET_DIR = "sevtone"
+DATASET_HANDLE = "tonmoyk983/sevtone-half-inter4k-vcip"
+LOCAL_DIR = "sevtone"
 
 # -----------------------------
 # 0. Install required tools
@@ -27,52 +25,34 @@ subprocess.run(
 # -----------------------------
 print("Setting up Kaggle credentials...")
 
-os.makedirs(
-    os.path.expanduser("~/.kaggle"),
-    exist_ok=True
-)
+os.makedirs(os.path.expanduser("~/.kaggle"), exist_ok=True)
 
-with open(
-    os.path.expanduser("~/.kaggle/kaggle.json"),
-    "w"
-) as f:
-
+with open(os.path.expanduser("~/.kaggle/kaggle.json"), "w") as f:
     f.write(f"""{{
-  "username":"{os.environ['KAGGLE_USERNAME']}",
-  "key":"{os.environ['KAGGLE_KEY']}"
+  "username": "{os.environ['KAGGLE_USERNAME']}",
+  "key": "{os.environ['KAGGLE_KEY']}"
 }}""")
 
-os.chmod(
-    os.path.expanduser("~/.kaggle/kaggle.json"),
-    0o600
-)
+os.chmod(os.path.expanduser("~/.kaggle/kaggle.json"), 0o600)
 
 # -----------------------------
 # 2. Install rclone
 # -----------------------------
 print("Installing rclone...")
 
-urllib.request.urlretrieve(
-    "https://downloads.rclone.org/rclone-current-linux-amd64.zip",
-    "rclone.zip"
-)
+url = "https://downloads.rclone.org/rclone-current-linux-amd64.zip"
+zip_path = "rclone.zip"
+
+urllib.request.urlretrieve(url, zip_path)
 
 subprocess.run(
-    "rm -rf rclone-* && unzip -o rclone.zip",
+    "rm -rf rclone-v1.74.1-linux-amd64 && unzip rclone.zip",
     shell=True,
     check=True
 )
 
-folder = [
-    f for f in os.listdir()
-    if f.startswith("rclone-")
-]
-
-folder = folder[0]
-
-rclone_path = os.path.abspath(
-    f"{folder}/rclone"
-)
+folder = [f for f in os.listdir() if f.startswith("rclone-")][0]
+rclone_path = os.path.abspath(f"{folder}/rclone")
 
 subprocess.run(
     f"chmod +x {rclone_path}",
@@ -93,31 +73,24 @@ print("✅ Rclone ready")
 # -----------------------------
 print("Configuring rclone...")
 
-os.makedirs(
-    os.path.expanduser("~/.config/rclone"),
-    exist_ok=True
-)
+os.makedirs(os.path.expanduser("~/.config/rclone"), exist_ok=True)
 
-with open(
-    os.path.expanduser(
-        "~/.config/rclone/rclone.conf"
-    ),
-    "wb"
-) as f:
-
-    f.write(
-        base64.b64decode(
-            os.environ["RCLONE_CONFIG_BASE64"]
-        )
-    )
-
-print("✅ Rclone configured")
+with open(os.path.expanduser("~/.config/rclone/rclone.conf"), "wb") as f:
+    f.write(base64.b64decode(os.environ["RCLONE_CONFIG_BASE64"]))
 
 # -----------------------------
-# 4. Create file list
-# Videos 1-500 only
+# 4. Clean and create output folders
 # -----------------------------
-print("Reading file list...")
+if os.path.exists(LOCAL_DIR):
+    shutil.rmtree(LOCAL_DIR)
+
+os.makedirs(f"{LOCAL_DIR}/Inter4K_png/Raw/Input", exist_ok=True)
+os.makedirs(f"{LOCAL_DIR}/VCIP_png", exist_ok=True)
+
+# -----------------------------
+# 5. Read Inter4K file list and select videos 501-1000
+# -----------------------------
+print("Reading Inter4K files...")
 
 result = subprocess.run(
     f"{rclone_path} lsf dataset:sevtone/Inter4K_png/Raw/Input -R",
@@ -135,94 +108,45 @@ all_files = [
 
 selected = []
 
-# Match:
-# Inter4K_vid_1_f001_in1.png
-
-pattern = re.compile(
-    r"Inter4K_vid_(\d+)_f(\d+)_in(\d+)\.png"
-)
+pattern = re.compile(r"Inter4K_vid_(\d+)_f(\d+)_in(\d+)\.png")
 
 for file in all_files:
-
     filename = os.path.basename(file)
-
     m = pattern.match(filename)
 
     if m:
-
         vid = int(m.group(1))
         frame = int(m.group(2))
         in_num = int(m.group(3))
 
-        if 1 <= vid <= 500:
-            selected.append(
-                (
-                    vid,
-                    frame,
-                    in_num,
-                    file
-                )
-            )
+        if 501 <= vid <= 1000:
+            selected.append((vid, frame, in_num, file))
 
-# Sort:
-# vid1→vid2→...
-# frame001→081→161→241
-# in1→in7
+selected.sort(key=lambda x: (x[0], x[1], x[2]))
 
-selected.sort(
-    key=lambda x: (
-        x[0],
-        x[1],
-        x[2]
-    )
-)
-
-with open(
-    "video_1_500.txt",
-    "w"
-) as f:
-
+with open("second_half.txt", "w") as f:
     for _, _, _, file in selected:
         f.write(file + "\n")
 
-print(
-    f"Selected files: {len(selected)}"
-)
+print(f"Selected Inter4K files: {len(selected)}")
+print("First 20 selected files:")
 
-# Preview first lines
-print("\nFirst 30 files:\n")
-
-with open(
-    "video_1_500.txt",
-    "r"
-) as f:
-
+with open("second_half.txt", "r") as f:
     for i, line in enumerate(f):
-
-        if i >= 30:
+        if i >= 20:
             break
-
-        print(
-            line.strip()
-        )
+        print(line.strip())
 
 # -----------------------------
-# 5. Download files
+# 6. Download Inter4K videos 501-1000 only
 # -----------------------------
-print(
-    "\nDownloading videos 1-500..."
-)
-
-os.makedirs(
-    LOCAL_DIR,
-    exist_ok=True
-)
+print("Downloading Inter4K videos 501-1000...")
 
 subprocess.run(
     f"{rclone_path} copy "
     f"dataset:sevtone/Inter4K_png/Raw/Input "
-    f"{LOCAL_DIR} "
-    f"--files-from video_1_500.txt "
+    f"{LOCAL_DIR}/Inter4K_png/Raw/Input "
+    f"--files-from second_half.txt "
     f"--progress "
     f"--transfers 8 "
     f"--checkers 8 "
@@ -231,17 +155,36 @@ subprocess.run(
     check=True
 )
 
-print("✅ Download complete")
+print("✅ Inter4K download complete")
 
 # -----------------------------
-# 6. Upload to Kaggle
+# 7. Download full VCIP
 # -----------------------------
-print("Uploading...")
+print("Downloading complete VCIP...")
+
+subprocess.run(
+    f"{rclone_path} copy "
+    f"dataset:sevtone/VCIP_png "
+    f"{LOCAL_DIR}/VCIP_png "
+    f"--progress "
+    f"--transfers 8 "
+    f"--checkers 8 "
+    f"--retries 5",
+    shell=True,
+    check=True
+)
+
+print("✅ VCIP complete")
+
+# -----------------------------
+# 8. Upload to Kaggle
+# -----------------------------
+print("Uploading to Kaggle...")
 
 kagglehub.dataset_upload(
     DATASET_HANDLE,
-    DATASET_DIR,
-    version_notes="Inter4K videos 1-500 only"
+    LOCAL_DIR,
+    version_notes="Inter4K videos 501-1000 only + complete VCIP_png"
 )
 
-print("🎉 Upload completed")
+print("🎉 Upload completed successfully!")
