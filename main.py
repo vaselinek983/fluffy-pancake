@@ -7,7 +7,7 @@ import re
 
 DATASET_HANDLE = "tonmoyk983/sevtone-half-inter4k-input"
 LOCAL_DIR = "sevtone/Inter4K_png/Raw/Input"
-
+DATASET_DIR = "sevtone"
 # -----------------------------
 # 0. Install required tools
 # -----------------------------
@@ -157,7 +157,7 @@ print("Uploading...")
 
 kagglehub.dataset_upload(
     DATASET_HANDLE,
-    LOCAL_DIR,
+    DATASET_DIR,
     version_notes="Inter4K videos 1-500 only"
 )
 
