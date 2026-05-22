@@ -8,6 +8,7 @@ import re
 DATASET_HANDLE = "tonmoyk983/sevtone-half-inter4k-input"
 LOCAL_DIR = "sevtone/Inter4K_png/Raw/Input"
 DATASET_DIR = "sevtone"
+
 # -----------------------------
 # 0. Install required tools
 # -----------------------------
@@ -24,9 +25,15 @@ subprocess.run(
 # -----------------------------
 print("Setting up Kaggle credentials...")
 
-os.makedirs(os.path.expanduser("~/.kaggle"), exist_ok=True)
+os.makedirs(
+    os.path.expanduser("~/.kaggle"),
+    exist_ok=True
+)
 
-with open(os.path.expanduser("~/.kaggle/kaggle.json"), "w") as f:
+with open(
+    os.path.expanduser("~/.kaggle/kaggle.json"),
+    "w"
+) as f:
     f.write(f"""{{
   "username":"{os.environ['KAGGLE_USERNAME']}",
   "key":"{os.environ['KAGGLE_KEY']}"
@@ -48,13 +55,19 @@ urllib.request.urlretrieve(
 )
 
 subprocess.run(
-    "rm -rf rclone-v1.74.1-linux-amd64 && unzip rclone.zip",
+    "rm -rf rclone-v1.74.1-linux-amd64 && unzip -o rclone.zip",
     shell=True,
     check=True
 )
 
-folder = [f for f in os.listdir() if f.startswith("rclone-")][0]
-rclone_path = os.path.abspath(f"{folder}/rclone")
+folder = [
+    f for f in os.listdir()
+    if f.startswith("rclone-")
+][0]
+
+rclone_path = os.path.abspath(
+    f"{folder}/rclone"
+)
 
 subprocess.run(
     f"chmod +x {rclone_path}",
@@ -78,6 +91,7 @@ with open(
     os.path.expanduser("~/.config/rclone/rclone.conf"),
     "wb"
 ) as f:
+
     f.write(
         base64.b64decode(
             os.environ["RCLONE_CONFIG_BASE64"]
@@ -116,20 +130,47 @@ for file in all_files:
     m = pattern.match(filename)
 
     if m:
+
         vid = int(m.group(1))
         frame = int(m.group(2))
 
         if 1 <= vid <= 500:
-            selected.append((vid, frame, file))
+            selected.append(
+                (vid, frame, file)
+            )
 
-# Numeric sorting
-selected.sort(key=lambda x: (x[0], x[1]))
+# Numeric sort
+selected.sort(
+    key=lambda x: (x[0], x[1])
+)
 
 with open("video_1_500.txt", "w") as f:
+
     for _, _, file in selected:
         f.write(file + "\n")
 
 print(f"Selected {len(selected)} files")
+
+# -----------------------------
+# Print first and last entries
+# -----------------------------
+print("\n===== First 50 entries =====\n")
+
+with open("video_1_500.txt", "r") as f:
+    for i, line in enumerate(f):
+
+        if i >= 50:
+            break
+
+        print(line.strip())
+
+print("\n===== Last 50 entries =====\n")
+
+with open("video_1_500.txt", "r") as f:
+    lines = f.readlines()
+
+for line in lines[-50:]:
+    print(line.strip())
 
 # -----------------------------
 # 5. Download files
