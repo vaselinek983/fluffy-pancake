@@ -3,6 +3,7 @@ import subprocess
 import kagglehub
 import base64
 import urllib.request
+import re
 
 DATASET_HANDLE = "tonmoyk983/sevtone-half-inter4k-input"
 LOCAL_DIR = "sevtone/Inter4K_png/Raw/Input"
@@ -23,19 +24,12 @@ subprocess.run(
 # -----------------------------
 print("Setting up Kaggle credentials...")
 
-os.makedirs(
-    os.path.expanduser("~/.kaggle"),
-    exist_ok=True
-)
+os.makedirs(os.path.expanduser("~/.kaggle"), exist_ok=True)
 
-with open(
-    os.path.expanduser("~/.kaggle/kaggle.json"),
-    "w"
-) as f:
-
+with open(os.path.expanduser("~/.kaggle/kaggle.json"), "w") as f:
     f.write(f"""{{
-  "username": "{os.environ['KAGGLE_USERNAME']}",
-  "key": "{os.environ['KAGGLE_KEY']}"
+  "username":"{os.environ['KAGGLE_USERNAME']}",
+  "key":"{os.environ['KAGGLE_KEY']}"
 }}""")
 
 os.chmod(
@@ -48,12 +42,9 @@ os.chmod(
 # -----------------------------
 print("Installing rclone...")
 
-url = "https://downloads.rclone.org/rclone-current-linux-amd64.zip"
-zip_path = "rclone.zip"
-
 urllib.request.urlretrieve(
-    url,
-    zip_path
+    "https://downloads.rclone.org/rclone-current-linux-amd64.zip",
+    "rclone.zip"
 )
 
 subprocess.run(
@@ -62,14 +53,8 @@ subprocess.run(
     check=True
 )
 
-folder = [
-    f for f in os.listdir()
-    if f.startswith("rclone-")
-][0]
-
-rclone_path = os.path.abspath(
-    f"{folder}/rclone"
-)
+folder = [f for f in os.listdir() if f.startswith("rclone-")][0]
+rclone_path = os.path.abspath(f"{folder}/rclone")
 
 subprocess.run(
     f"chmod +x {rclone_path}",
@@ -77,13 +62,7 @@ subprocess.run(
     check=True
 )
 
-subprocess.run(
-    f"{rclone_path} version",
-    shell=True,
-    check=True
-)
-
-print("✅ Rclone ready:", rclone_path)
+print("✅ Rclone ready")
 
 # -----------------------------
 # 3. Setup rclone config
@@ -96,24 +75,19 @@ os.makedirs(
 )
 
 with open(
-    os.path.expanduser(
-        "~/.config/rclone/rclone.conf"
-    ),
+    os.path.expanduser("~/.config/rclone/rclone.conf"),
     "wb"
 ) as f:
-
     f.write(
         base64.b64decode(
             os.environ["RCLONE_CONFIG_BASE64"]
         )
     )
 
-print("✅ Rclone configured")
-
 # -----------------------------
 # 4. Create file list for videos 1-500
 # -----------------------------
-print("Reading file list from Google Drive...")
+print("Reading file list...")
 
 result = subprocess.run(
     f"{rclone_path} lsf dataset:sevtone/Inter4K_png/Raw/Input -R",
@@ -124,42 +98,41 @@ result = subprocess.run(
 )
 
 all_files = [
-    f.strip()
-    for f in result.stdout.splitlines()
-    if f.strip()
+    x.strip()
+    for x in result.stdout.splitlines()
+    if x.strip()
 ]
 
-selected_files = []
+selected = []
 
-for file in sorted(all_files):
+pattern = re.compile(
+    r"Inter4K_vid_(\d+)_f(\d+)_in\d+\.png"
+)
+
+for file in all_files:
 
     filename = os.path.basename(file)
 
-    # Example:
-    # Inter4K_vid_1_f001_in1.png
-    if filename.startswith("Inter4K_vid_"):
+    m = pattern.match(filename)
 
-        try:
-            vid_num = int(
-                filename.split("_")[2]
-            )
+    if m:
+        vid = int(m.group(1))
+        frame = int(m.group(2))
 
-            if 1 <= vid_num <= 500:
-                selected_files.append(file)
+        if 1 <= vid <= 500:
+            selected.append((vid, frame, file))
 
-        except:
-            pass
-
-print(f"Total selected files: {len(selected_files)}")
+# Numeric sorting
+selected.sort(key=lambda x: (x[0], x[1]))
 
 with open("video_1_500.txt", "w") as f:
-    for file in selected_files:
+    for _, _, file in selected:
         f.write(file + "\n")
 
-print("✅ File list prepared")
+print(f"Selected {len(selected)} files")
 
 # -----------------------------
-# 5. Download selected files
+# 5. Download files
 # -----------------------------
 print("Downloading videos 1-500...")
 
@@ -170,8 +143,7 @@ subprocess.run(
     f"--files-from video_1_500.txt "
     f"--progress "
     f"--transfers 8 "
-    f"--checkers 8 "
-    f"--retries 5",
+    f"--checkers 8",
     shell=True,
     check=True
 )
@@ -181,12 +153,12 @@ print("✅ Download complete")
 # -----------------------------
 # 6. Upload to Kaggle
 # -----------------------------
-print("Uploading to Kaggle...")
+print("Uploading...")
 
 kagglehub.dataset_upload(
     DATASET_HANDLE,
     LOCAL_DIR,
-    version_notes="Uploaded Inter4K videos 1-500"
+    version_notes="Inter4K videos 1-500 only"
 )
 
-print("🎉 Upload completed successfully!")
+print("🎉 Upload completed")
