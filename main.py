@@ -4,7 +4,7 @@ import kagglehub
 import base64
 import urllib.request
 
-DATASET_HANDLE = "tonmoyk983/sevtone-half-inter4k_vcip"
+DATASET_HANDLE = "tonmoyk983/sevtone-half-inter4k-vcip"
 LOCAL_DIR = "sevtone"
 
 # -----------------------------
@@ -57,7 +57,7 @@ urllib.request.urlretrieve(
 )
 
 subprocess.run(
-    "unzip -o rclone.zip",
+    "rm -rf rclone-v1.74.1-linux-amd64 && unzip rclone.zip",
     shell=True,
     check=True
 )
@@ -196,8 +196,7 @@ kagglehub.dataset_upload(
     DATASET_HANDLE,
     LOCAL_DIR,
     version_notes=(
-        "Second half of Inter4K_png/Raw/Input "
-        "+ complete VCIP_png"
+        "Second half of Inter4K_png Raw Input and VCIP "
     )
 )
 
