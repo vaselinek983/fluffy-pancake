@@ -172,7 +172,7 @@ jobs:
               -i "$INPUT" \
               -vf "select=eq(n\\,$((MIDDLE-1)))" \
               -frames:v 1 \
-              Inter4K_png/Raw/Output/Inter4K_vid_${{ matrix.VIDEO_ID }}_f${MIDDLE_PAD}_orig.png
+              Inter4K_png/Raw/Output/Inter4K_vid_${{ matrix.VIDEO_ID }}_f${MIDDLE_PAD}_out.png
 
           done
 
