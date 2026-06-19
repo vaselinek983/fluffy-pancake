@@ -53,9 +53,7 @@ jobs:
         run: |
           pwd && ls dataset/
           WIDTH=$($FFPROBE -v error -select_streams v:0 -show_entries stream=width -of csv=p=0 "$INPUT")  
-
           HEIGHT=$($FFPROBE -v error -select_streams v:0 -show_entries stream=height -of csv=p=0 "$INPUT")  
-
           TOTAL_FRAMES=$($FFPROBE -v error -select_streams v:0 -count_frames -show_entries stream=nb_read_frames -of csv=p=0 "$INPUT")  
 
           echo "WIDTH=$WIDTH" >> $GITHUB_ENV  
@@ -76,22 +74,7 @@ jobs:
             LIMIT=""  
           fi  
 
-          $FFMPEG -y \  
-            -i "$INPUT" \  
-            $LIMIT \  
-            -c:v libvvenc \  
-            -qp 37 \  
-            -pix_fmt yuv420p \  
-            -an \  
-            -f matroska - \  
-          | $FFMPEG -y \  
-              -fflags +genpts \  
-              -i - \  
-              -vsync 0 \  
-              $LIMIT \  
-              -pix_fmt yuv420p \  
-              -f rawvideo \  
-              output/${{ matrix.VIDEO_ID }}.yuv  
+          $FFMPEG -y -i "$INPUT" $LIMIT -c:v libvvenc -qp 37 -pix_fmt yuv420p -an -f matroska - | $FFMPEG -y -fflags +genpts -i - -vsync 0 $LIMIT -pix_fmt yuv420p -f rawvideo output/${{ matrix.VIDEO_ID }}.yuv  
 
       - name: Create VCIP PNG samples  
         run: |  
@@ -133,15 +116,7 @@ jobs:
             SAMPLE_DIR="$TMP_DIR/sample_${START}"  
             mkdir -p "$SAMPLE_DIR"  
 
-            $FFMPEG -v error -y \  
-              -f rawvideo \  
-              -pix_fmt yuv420p \  
-              -s ${WIDTH}x${HEIGHT} \  
-              -framerate 30 \  
-              -i output/${{ matrix.VIDEO_ID }}.yuv \  
-              -vf "select='between(n\,${FIRST}\,${LAST})',setpts=N/FRAME_RATE/TB" \  
-              -vsync 0 \  
-              "$SAMPLE_DIR/in_%06d.png"  
+            $FFMPEG -v error -y -f rawvideo -pix_fmt yuv420p -s ${WIDTH}x${HEIGHT} -framerate 30 -i output/${{ matrix.VIDEO_ID }}.yuv -vf "select='between(n\,${FIRST}\,${LAST})',setpts=N/FRAME_RATE/TB" -vsync 0 "$SAMPLE_DIR/in_%06d.png"  
 
             # Copy 1..7 input frames to final names  
             for i in 1 2 3 4 5 6 7; do  
@@ -149,23 +124,14 @@ jobs:
               printf -v FRAME_PAD "%03d" "$FRAME_NUM"  
               printf -v IDX "%06d" "$i"  
                 
-              cp "$SAMPLE_DIR/in_${IDX}.png" \  
-                upload_data/VCIP_png/Raw/Input/VCIP_vid_${{ matrix.VIDEO_ID }}_f${FRAME_PAD}_in${i}.png  
+              cp "$SAMPLE_DIR/in_${IDX}.png" upload_data/VCIP_png/Raw/Input/VCIP_vid_${{ matrix.VIDEO_ID }}_f${FRAME_PAD}_in${i}.png  
             done  
 
             # Extract 8th output frame from original video  
-            $FFMPEG -v error -y \  
-              -i "$INPUT" \  
-              -vf "select=eq(n\\,$((TARGET-1)))" \  
-              -frames:v 1 \  
-              upload_data/VCIP_png/Raw/Output/VCIP_vid_${{ matrix.VIDEO_ID }}_f${TARGET_PAD}_out.png  
+            $FFMPEG -v error -y -i "$INPUT" -vf "select=eq(n\\,$((TARGET-1)))" -frames:v 1 upload_data/VCIP_png/Raw/Output/VCIP_vid_${{ matrix.VIDEO_ID }}_f${TARGET_PAD}_out.png  
 
             # Extract 4th output frame from original video  
-            $FFMPEG -v error -y \  
-              -i "$INPUT" \  
-              -vf "select=eq(n\\,$((TARGET_4TH-1)))" \  
-              -frames:v 1 \  
-              upload_data/VCIP_png/Raw/Output/VCIP_vid_${{ matrix.VIDEO_ID }}_f${TARGET_4TH_PAD}_out.png  
+            $FFMPEG -v error -y -i "$INPUT" -vf "select=eq(n\\,$((TARGET_4TH-1)))" -frames:v 1 upload_data/VCIP_png/Raw/Output/VCIP_vid_${{ matrix.VIDEO_ID }}_f${TARGET_4TH_PAD}_out.png  
           done  
 
       - name: Install rclone  
