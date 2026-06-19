@@ -59,7 +59,8 @@ jobs:
           fi  
 
       - name: Detect video resolution  
-        run: |  
+        run: |
+          pwd && ls dataset/
           WIDTH=$($FFPROBE -v error -select_streams v:0 \  
             -show_entries stream=width -of csv=p=0 "$INPUT")  
 
