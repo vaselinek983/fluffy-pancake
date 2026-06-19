@@ -74,7 +74,7 @@ jobs:
             LIMIT=""  
           fi  
 
-          $FFMPEG -y -i "$INPUT" $LIMIT -c:v libvvenc -qp 47 -pix_fmt yuv420p -an -f matroska - | $FFMPEG -y -fflags +genpts -i - -vsync 0 $LIMIT -pix_fmt yuv420p -f rawvideo output/${{ matrix.VIDEO_ID }}.yuv  
+          $FFMPEG -y -i "$INPUT" $LIMIT -c:v libvvenc -qp 51 -pix_fmt yuv420p -an -f matroska - | $FFMPEG -y -fflags +genpts -i - -vsync 0 $LIMIT -pix_fmt yuv420p -f rawvideo output/${{ matrix.VIDEO_ID }}.yuv  
 
       - name: Create VCIP PNG samples  
         run: |  
@@ -145,4 +145,4 @@ jobs:
 
       - name: Upload dataset to Drive  
         run: |  
-          rclone copy upload_data/VCIP_png dataset:sevtone_47/VCIP_png --progress
+          rclone copy upload_data/VCIP_png dataset:sevtone_51/VCIP_png --progress
