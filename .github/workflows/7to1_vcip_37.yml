@@ -42,7 +42,7 @@ jobs:
         run: |  
           echo "FFMPEG=$GITHUB_WORKSPACE/ffmpeg_bin/ffmpeg-master-latest-linux64-gpl/bin/ffmpeg" >> $GITHUB_ENV  
           echo "FFPROBE=$GITHUB_WORKSPACE/ffmpeg_bin/ffmpeg-master-latest-linux64-gpl/bin/ffprobe" >> $GITHUB_ENV  
-          echo "INPUT=dataset/${{ matrix.VIDEO_ID }}.mp4" >> $GITHUB_ENV  
+          echo "INPUT=$GITHUB_WORKSPACE/dataset/${{ matrix.VIDEO_ID }}.mp4" >> $GITHUB_ENV  
 
       - uses: actions/cache@v4  
         with:  
