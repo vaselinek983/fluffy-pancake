@@ -47,16 +47,7 @@ jobs:
       - uses: actions/cache@v4  
         with:  
           path: dataset  
-          key: dataset-mega-v1-${{ runner.os }}  
-
-      - name: Download dataset  
-        run: |  
-          if [ ! -d dataset ]; then  
-            mkdir -p dataset_zip  
-            megadl "https://mega.nz/file/kIdhyATA#QjiOI1xFOZjRWpRUKSSPFRWzBx2WpUQ1PLfezxmt740" --path dataset_zip  
-            mkdir -p dataset  
-            unzip -o dataset_zip/*.zip -d dataset  
-          fi  
+          key: dataset-mega-v1-${{ runner.os }}
 
       - name: Detect video resolution  
         run: |
