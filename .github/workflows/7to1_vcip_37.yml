@@ -1,4 +1,4 @@
-name: VVENC → VCIP PNG Dataset 2→ Google Drive
+name: VVENC → VCIP PNG Dataset 37 2→ Google Drive
 
 on:
   workflow_dispatch:
