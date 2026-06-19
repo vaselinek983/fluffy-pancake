@@ -52,14 +52,11 @@ jobs:
       - name: Detect video resolution  
         run: |
           pwd && ls dataset/
-          WIDTH=$($FFPROBE -v error -select_streams v:0 \  
-            -show_entries stream=width -of csv=p=0 "$INPUT")  
+          WIDTH=$($FFPROBE -v error -select_streams v:0 -show_entries stream=width -of csv=p=0 "$INPUT")  
 
-          HEIGHT=$($FFPROBE -v error -select_streams v:0 \  
-            -show_entries stream=height -of csv=p=0 "$INPUT")  
+          HEIGHT=$($FFPROBE -v error -select_streams v:0 -show_entries stream=height -of csv=p=0 "$INPUT")  
 
-          TOTAL_FRAMES=$($FFPROBE -v error -select_streams v:0 -count_frames \  
-            -show_entries stream=nb_read_frames -of csv=p=0 "$INPUT")  
+          TOTAL_FRAMES=$($FFPROBE -v error -select_streams v:0 -count_frames -show_entries stream=nb_read_frames -of csv=p=0 "$INPUT")  
 
           echo "WIDTH=$WIDTH" >> $GITHUB_ENV  
           echo "HEIGHT=$HEIGHT" >> $GITHUB_ENV  
